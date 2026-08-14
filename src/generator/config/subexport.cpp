@@ -547,9 +547,9 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
             if (!x.Ports.empty())
                 singleproxy["ports"] = x.Ports;
             if (!x.Up.empty())
-                singleproxy["up"] = x.UpSpeed;
+                singleproxy["up"] = x.Up;
             if (!x.Down.empty())
-                singleproxy["down"] = x.DownSpeed;
+                singleproxy["down"] = x.Down;
             if (!x.Password.empty())
                 singleproxy["password"] = x.Password;
             if (!x.OBFS.empty())
@@ -2484,9 +2484,9 @@ void proxyToSingBox(std::vector<Proxy> &nodes, rapidjson::Document &json, std::v
                 addSingBoxCommonMembers(proxy, x, "hysteria2", allocator);
                 if (!x.Ports.empty())
                     proxy.AddMember("server_ports", buildSingBoxHysteria2ServerPorts(x.Ports, allocator), allocator);
-                if (!x.Up.empty())
+                if (x.UpSpeed)
                     proxy.AddMember("up_mbps", x.UpSpeed, allocator);
-                if (!x.Down.empty())
+                if (x.DownSpeed)
                     proxy.AddMember("down_mbps", x.DownSpeed, allocator);
                 if (!x.OBFS.empty())
                 {

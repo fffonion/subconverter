@@ -234,6 +234,26 @@ void hysteriaConstruct(
     }
 }
 
+/// Hysteria 2 bandwidth accepts both a plain number, which means Mbps, and a
+/// value with a unit such as "1 Gbps" or "100 MBps". Targets that carry the
+/// bandwidth as a number need it in Mbps.
+static uint32_t bandwidthToMbps(const std::string &bandwidth)
+{
+    std::string value, prefix, base;
+    if(regGetMatch(bandwidth, R"(^\s*(\d+)\s*([KMGT]?)([Bb])ps\s*$)", 4, 0, &value, &prefix, &base) != 0)
+        return to_int(bandwidth);
+    uint64_t bits = static_cast<uint64_t>(to_int(value)) * (base == "B" ? 8 : 1);
+    if(prefix == "T")
+        return bits * 1000000;
+    if(prefix == "G")
+        return bits * 1000;
+    if(prefix == "M")
+        return bits;
+    if(prefix == "K")
+        return bits / 1000;
+    return bits / 1000000;
+}
+
 void hysteria2Construct(
     Proxy &node, 
     const std::string &group,
@@ -259,8 +279,10 @@ void hysteria2Construct(
 ) {
     commonConstruct(node, ProxyType::Hysteria2, group, remarks, server, port, tribool(), tfo, scv, tribool(), underlying_proxy);
     node.TLSSecure = true;
-    node.UpSpeed = to_int(up);
-    node.DownSpeed = to_int(down);
+    node.Up = up;
+    node.Down = down;
+    node.UpSpeed = bandwidthToMbps(up);
+    node.DownSpeed = bandwidthToMbps(down);
     node.Ports = ports;
     node.Password = password;
     node.OBFS = obfs;
