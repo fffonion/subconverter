@@ -73,6 +73,26 @@ class ConversionE2E(unittest.TestCase):
                          "authenticated-length: false", "client-fingerprint: chrome", "h2"):
             self.assertIn(expected, output)
 
+    def test_anytls_fields_and_singbox_outbound(self):
+        encoded = self.convert("clash", "anytls://pa%40ss@at.example.com:443#encoded")
+        self.assertIn("pa@ss", encoded)
+        sample = ("proxies:\n"
+                  "  - {name: anytls-sample, type: anytls, server: at.example.com, port: 443, password: sample-password, sni: tls.example.com, alpn: [h2, http/1.1], client-fingerprint: chrome, client-metadata: sample-meta, idle-session-check-interval: 12, idle-session-timeout: 13, min-idle-session: 2}\n")
+        source = "data:text/plain;base64," + base64.b64encode(sample.encode()).decode()
+        clash = self.convert("clash", source)
+        for expected in ("client-fingerprint: chrome", "client-metadata: sample-meta",
+                         "idle-session-check-interval: 12", "idle-session-timeout: 13",
+                         "min-idle-session: 2", "http/1.1"):
+            self.assertIn(expected, clash)
+        singbox = json.loads(self.convert("singbox", source))
+        outbound = next(node for node in singbox["outbounds"] if node["type"] == "anytls")
+        self.assertEqual(outbound["password"], "sample-password")
+        self.assertNotIn("users", outbound)
+        self.assertEqual(outbound["idle_session_check_interval"], "12s")
+        self.assertEqual(outbound["idle_session_timeout"], "13s")
+        self.assertEqual(outbound["min_idle_session"], 2)
+        self.assertEqual(outbound["tls"]["alpn"], ["h2", "http/1.1"])
+
     def test_hysteria2_port_range_fingerprint_and_bandwidth(self):
         source = ("hysteria2://password@192.0.2.10:8443-8450/"
                   "?sni=example.com&pinSHA256=abc&up=1%20Gbps&down=200%20Mbps#hy2")

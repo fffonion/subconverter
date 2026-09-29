@@ -144,6 +144,10 @@ struct Proxy
     uint32_t CWND = 0;
     uint32_t ObfsMinPacketSize = 0;
     uint32_t ObfsMaxPacketSize = 0;
+    String ClientMetadata;
+    uint32_t IdleSessionCheckInterval = 0;
+    uint32_t IdleSessionTimeout = 0;
+    uint32_t MinIdleSession = 0;
 };
 
 #define SS_DEFAULT_GROUP "SSProvider"

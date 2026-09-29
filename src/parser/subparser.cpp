@@ -1734,6 +1734,14 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
             singleproxy["sni"] >>= sni;
 
             anyTLSConstruct(node, group, ps, server, port, password, sni, udp, tfo, scv, underlying_proxy);
+            singleproxy["client-fingerprint"] >>= node.ClientFingerprint;
+            singleproxy["client-metadata"] >>= node.ClientMetadata;
+            node.IdleSessionCheckInterval = to_int(safe_as<std::string>(singleproxy["idle-session-check-interval"]));
+            node.IdleSessionTimeout = to_int(safe_as<std::string>(singleproxy["idle-session-timeout"]));
+            node.MinIdleSession = to_int(safe_as<std::string>(singleproxy["min-idle-session"]));
+            if(singleproxy["alpn"].IsSequence())
+                for(const auto &entry : singleproxy["alpn"])
+                    node.Alpn.push_back(entry.as<std::string>());
             break;
         case "vless"_hash:
         {
@@ -2033,6 +2041,7 @@ void explodeAnyTLS(std::string anytls, Proxy &node) {
         return;
     if (port == "0")
         return;
+    password = urlDecode(password);
     sni = getUrlArg(addition, "sni");
     udp = getUrlArg(addition, "udp");
     scv = getUrlArg(addition, "insecure");

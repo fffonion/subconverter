@@ -112,6 +112,38 @@ int main() {
     assert(!vmess_roundtrip["authenticated-length"].as<bool>());
     assert(vmess_roundtrip["client-fingerprint"].as<std::string>() == "chrome");
     assert(vmess_roundtrip["alpn"].size() == 2);
+    Proxy encoded_anytls;
+    explode("anytls://pa%40ss@at.example.com:443?sni=tls.example.com#encoded", encoded_anytls);
+    assert(encoded_anytls.Type == ProxyType::AnyTLS);
+    assert(encoded_anytls.Password == "pa@ss");
+    YAML::Node anytls_input = YAML::Load(R"(proxies:
+  - {name: anytls-sample, type: anytls, server: at.example.com, port: 443, password: sample-password, sni: tls.example.com, alpn: [h2, http/1.1], client-fingerprint: chrome, client-metadata: sample-meta, idle-session-check-interval: 12, idle-session-timeout: 13, min-idle-session: 2}
+)");
+    std::vector<Proxy> anytls_nodes;
+    explodeClash(anytls_input, anytls_nodes);
+    assert(anytls_nodes.size() == 1);
+    YAML::Node anytls_output;
+    proxyToClash(anytls_nodes, anytls_output, groups, false, settings);
+    const auto anytls_roundtrip = anytls_output["proxies"][0];
+    assert(anytls_roundtrip["alpn"].size() == 2);
+    assert(anytls_roundtrip["client-fingerprint"].as<std::string>() == "chrome");
+    assert(anytls_roundtrip["client-metadata"].as<std::string>() == "sample-meta");
+    assert(anytls_roundtrip["idle-session-check-interval"].as<int>() == 12);
+    assert(anytls_roundtrip["idle-session-timeout"].as<int>() == 13);
+    assert(anytls_roundtrip["min-idle-session"].as<int>() == 2);
+    std::vector<RulesetContent> anytls_rules;
+    const auto anytls_json = proxyToSingBox(anytls_nodes, "{}", anytls_rules, groups, settings);
+    rapidjson::Document anytls_doc;
+    anytls_doc.Parse(anytls_json.c_str());
+    assert(!anytls_doc.HasParseError() && anytls_doc.HasMember("outbounds"));
+    const auto &anytls_outbound = anytls_doc["outbounds"][0];
+    assert(std::string(anytls_outbound["type"].GetString()) == "anytls");
+    assert(!anytls_outbound.HasMember("users"));
+    assert(std::string(anytls_outbound["password"].GetString()) == "sample-password");
+    assert(std::string(anytls_outbound["idle_session_check_interval"].GetString()) == "12s");
+    assert(std::string(anytls_outbound["idle_session_timeout"].GetString()) == "13s");
+    assert(anytls_outbound["min_idle_session"].GetInt() == 2);
+    assert(anytls_outbound["tls"]["alpn"].GetArray().Size() == 2);
     std::vector<Proxy> subscription_nodes;
     explodeSub("mixed-port: 7890\n" + YAML::Dump(sample), subscription_nodes);
     assert(subscription_nodes.size() == 1);

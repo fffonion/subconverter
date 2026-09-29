@@ -652,6 +652,18 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
             singleproxy["password"] = x.Password;
             if (!x.SNI.empty())
                 singleproxy["sni"] = x.SNI;
+            if (!x.ClientFingerprint.empty())
+                singleproxy["client-fingerprint"] = x.ClientFingerprint;
+            if (!x.ClientMetadata.empty())
+                singleproxy["client-metadata"] = x.ClientMetadata;
+            if (!x.Alpn.empty())
+                singleproxy["alpn"] = x.Alpn;
+            if (x.IdleSessionCheckInterval)
+                singleproxy["idle-session-check-interval"] = x.IdleSessionCheckInterval;
+            if (x.IdleSessionTimeout)
+                singleproxy["idle-session-timeout"] = x.IdleSessionTimeout;
+            if (x.MinIdleSession)
+                singleproxy["min-idle-session"] = x.MinIdleSession;
             if (!scv.is_undef())
                 singleproxy["skip-cert-verify"] = scv.get();
             break;
@@ -2603,12 +2615,15 @@ void proxyToSingBox(std::vector<Proxy> &nodes, rapidjson::Document &json, std::v
             case ProxyType::AnyTLS:
             {
                 addSingBoxCommonMembers(proxy, x, "anytls", allocator);
-                rapidjson::Value users(rapidjson::kArrayType);
-                rapidjson::Value user(rapidjson::kObjectType);
-                user.AddMember("username", "sekai", allocator);
-                user.AddMember("password", rapidjson::StringRef(x.Password.c_str()), allocator);
-                users.PushBack(user, allocator);
-                proxy.AddMember("users", users, allocator);
+                proxy.AddMember("password", rapidjson::StringRef(x.Password.c_str()), allocator);
+                if (x.IdleSessionCheckInterval)
+                    proxy.AddMember("idle_session_check_interval", rapidjson::Value(formatSingBoxInterval(x.IdleSessionCheckInterval).c_str(), allocator), allocator);
+                if (x.IdleSessionTimeout)
+                    proxy.AddMember("idle_session_timeout", rapidjson::Value(formatSingBoxInterval(x.IdleSessionTimeout).c_str(), allocator), allocator);
+                if (x.MinIdleSession)
+                    proxy.AddMember("min_idle_session", x.MinIdleSession, allocator);
+                if (!x.ClientMetadata.empty())
+                    proxy.AddMember("client_metadata", rapidjson::StringRef(x.ClientMetadata.c_str()), allocator);
                 break;
             }
             default:
