@@ -96,6 +96,8 @@ struct Proxy
 
     String Flow;
     String ShortId;
+    String PacketEncoding;
+    String VlessEncryption;
 
     tribool UDP;
     tribool TCPFastOpen;

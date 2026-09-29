@@ -74,6 +74,22 @@ int main() {
     assert(sample_output["proxies"][0]["hop-interval"].as<int>() == 26);
     assert(sample_output["proxies"][0]["bbr-profile"].IsDefined());
     assert(sample_output["proxies"][0]["bbr-profile"].as<std::string>() == "aggressive");
+    YAML::Node vless_input = YAML::Load(R"(proxies:
+  - {name: first, type: vless, server: first.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, tls: true, network: ws, ws-opts: {path: /first, headers: {Host: ws-first.example.com}}}
+  - {name: second, type: vless, server: second.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, tls: true, network: ws, packet-encoding: xudp, encryption: example-encryption, alpn: [h2, http/1.1]}
+)");
+    std::vector<Proxy> vless_nodes;
+    explodeClash(vless_input, vless_nodes);
+    assert(vless_nodes.size() == 2);
+    assert(vless_nodes[1].Path == "/");
+    assert(vless_nodes[1].Host != "ws-first.example.com");
+    YAML::Node vless_output;
+    proxyToClash(vless_nodes, vless_output, groups, false, settings);
+    const auto second = vless_output["proxies"][1];
+    assert(second["ws-opts"]["path"].as<std::string>() == "/");
+    assert(second["packet-encoding"].as<std::string>() == "xudp");
+    assert(second["encryption"].as<std::string>() == "example-encryption");
+    assert(second["alpn"].size() == 2);
     std::vector<Proxy> subscription_nodes;
     explodeSub("mixed-port: 7890\n" + YAML::Dump(sample), subscription_nodes);
     assert(subscription_nodes.size() == 1);

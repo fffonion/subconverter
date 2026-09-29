@@ -1724,6 +1724,8 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
         {
             group = V2RAY_DEFAULT_GROUP;
             std::string flow, fp, pbk, sid, security;
+            path.clear();
+            host.clear();
 
             singleproxy["uuid"] >>= id;
             singleproxy["flow"] >>= flow;
@@ -1740,6 +1742,8 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
                     path = singleproxy["ws-opts"]["path"].IsDefined() ? safe_as<std::string>(singleproxy["ws-opts"]["path"]) : "/";
                     singleproxy["ws-opts"]["headers"]["Host"] >>= host;
                 }
+                else
+                    path = "/";
                 break;
             case "grpc"_hash:
                 singleproxy["grpc-opts"]["grpc-service-name"] >>= path;
@@ -1775,6 +1779,11 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
             }
 
             vlessConstruct(node, group, ps, server, port, id, flow, net, "", path, host, security, sni, fp, pbk, sid, udp, tfo, scv, underlying_proxy);
+            singleproxy["packet-encoding"] >>= node.PacketEncoding;
+            singleproxy["encryption"] >>= node.VlessEncryption;
+            if(singleproxy["alpn"].IsSequence())
+                for(const auto &entry : singleproxy["alpn"])
+                    node.Alpn.push_back(entry.as<std::string>());
             break;
         }
 

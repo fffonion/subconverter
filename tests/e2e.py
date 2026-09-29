@@ -54,6 +54,16 @@ class ConversionE2E(unittest.TestCase):
             self.assertIn(expected, output[:1500], expected)
         self.assertRegex(output[:1500], r'short-id: (?:!<tag:yaml.org,2002:str> )?["\']?11["\']?')
 
+    def test_vless_clash_fields_and_ws_isolation(self):
+        sample = ("proxies:\n"
+                  "  - {name: first, type: vless, server: first.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, tls: true, network: ws, ws-opts: {path: /first, headers: {Host: ws-first.example.com}}}\n"
+                  "  - {name: second, type: vless, server: second.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, tls: true, network: ws, packet-encoding: xudp, encryption: example-encryption, alpn: [h2, http/1.1]}\n")
+        source = "data:text/plain;base64," + base64.b64encode(sample.encode()).decode()
+        output = self.convert("clash", source)
+        self.assertEqual(output.count("/first"), 1)
+        for expected in ("packet-encoding: xudp", "encryption: example-encryption", "alpn:"):
+            self.assertIn(expected, output)
+
     def test_hysteria2_port_range_fingerprint_and_bandwidth(self):
         source = ("hysteria2://password@192.0.2.10:8443-8450/"
                   "?sni=example.com&pinSHA256=abc&up=1%20Gbps&down=200%20Mbps#hy2")
