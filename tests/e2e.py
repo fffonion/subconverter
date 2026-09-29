@@ -88,14 +88,18 @@ class ConversionE2E(unittest.TestCase):
                   "    bbr-profile: aggressive\n"
                   "    up: 30 Mbps\n"
                   "    down: 100 Mbps\n"
+                  "    obfs: gecko\n"
+                  "    obfs-min-packet-size: 512\n"
+                  "    obfs-max-packet-size: 1200\n"
                   "    sni: tls.example.com\n"
                   "    skip-cert-verify: false\n"
-                  "    alpn: [h3]\n")
+                  "    alpn: [h3, h2]\n")
         source = "data:text/plain;base64," + base64.b64encode(sample.encode()).decode()
         output = self.convert("clash", source)
         for expected in ("name: sample-hy2", "ports: 12001-13000", "hop-interval: 26",
                          "bbr-profile: aggressive", "up: 30 Mbps", "down: 100 Mbps",
-                         "tls.example.com", "h3"):
+                         "tls.example.com", "h3", "h2", "obfs-min-packet-size: 512",
+                         "obfs-max-packet-size: 1200"):
             self.assertIn(expected, output[:1600], expected)
 
 

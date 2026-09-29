@@ -616,6 +616,10 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
                 singleproxy["obfs"] = x.OBFS;
             if (!x.OBFSParam.empty())
                 singleproxy["obfs-password"] = x.OBFSParam;
+            if (x.ObfsMinPacketSize)
+                singleproxy["obfs-min-packet-size"] = x.ObfsMinPacketSize;
+            if (x.ObfsMaxPacketSize)
+                singleproxy["obfs-max-packet-size"] = x.ObfsMaxPacketSize;
             if (!x.SNI.empty())
                 singleproxy["sni"] = x.SNI;
             if (!scv.is_undef())

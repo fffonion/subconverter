@@ -139,6 +139,8 @@ struct Proxy
     StringArray Alpn;
 
     uint32_t CWND = 0;
+    uint32_t ObfsMinPacketSize = 0;
+    uint32_t ObfsMaxPacketSize = 0;
 };
 
 #define SS_DEFAULT_GROUP "SSProvider"

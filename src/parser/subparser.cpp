@@ -1711,6 +1711,14 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
             singleproxy["hop-interval"] >>= hop_interval;
 
             hysteria2Construct(node, group, ps, server, port, ports, up, down, password, obfs, obfs_password, sni, fingerprint, alpn, ca, ca_str, cwnd, hop_interval, tfo, scv, underlying_proxy);
+            if(singleproxy["alpn"].IsSequence())
+            {
+                node.Alpn.clear();
+                for(const auto &entry : singleproxy["alpn"])
+                    node.Alpn.push_back(entry.as<std::string>());
+            }
+            node.ObfsMinPacketSize = to_int(safe_as<std::string>(singleproxy["obfs-min-packet-size"]));
+            node.ObfsMaxPacketSize = to_int(safe_as<std::string>(singleproxy["obfs-max-packet-size"]));
             singleproxy["bbr-profile"] >>= node.BbrProfile;
             break;
         case "anytls"_hash:

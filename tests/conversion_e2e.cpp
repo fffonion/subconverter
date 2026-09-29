@@ -53,10 +53,14 @@ int main() {
     bbr-profile: aggressive
     up: 30 Mbps
     down: 100 Mbps
+    obfs: gecko
+    obfs-min-packet-size: 512
+    obfs-max-packet-size: 1200
     sni: tls.example.com
     skip-cert-verify: false
     alpn:
       - h3
+      - h2
 )");
     std::vector<Proxy> sample_nodes;
     explodeClash(sample, sample_nodes);
@@ -67,13 +71,17 @@ int main() {
     assert(sample_nodes[0].HopInterval == 26);
     assert(sample_nodes[0].Up == "30 Mbps");
     assert(sample_nodes[0].Down == "100 Mbps");
-    assert(sample_nodes[0].Alpn.size() == 1 && sample_nodes[0].Alpn[0] == "h3");
+    assert(sample_nodes[0].Alpn.size() == 2);
+    assert(sample_nodes[0].Alpn[0] == "h3" && sample_nodes[0].Alpn[1] == "h2");
     YAML::Node sample_output;
     proxyToClash(sample_nodes, sample_output, groups, false, settings);
     assert(sample_output["proxies"][0]["ports"].as<std::string>() == "12001-13000");
     assert(sample_output["proxies"][0]["hop-interval"].as<int>() == 26);
     assert(sample_output["proxies"][0]["bbr-profile"].IsDefined());
     assert(sample_output["proxies"][0]["bbr-profile"].as<std::string>() == "aggressive");
+    assert(sample_output["proxies"][0]["alpn"].size() == 2);
+    assert(sample_output["proxies"][0]["obfs-min-packet-size"].as<int>() == 512);
+    assert(sample_output["proxies"][0]["obfs-max-packet-size"].as<int>() == 1200);
     YAML::Node vless_input = YAML::Load(R"(proxies:
   - {name: first, type: vless, server: first.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, tls: true, network: ws, ws-opts: {path: /first, headers: {Host: ws-first.example.com}}}
   - {name: second, type: vless, server: second.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, tls: true, network: ws, packet-encoding: xudp, encryption: example-encryption, alpn: [h2, http/1.1]}
