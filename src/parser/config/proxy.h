@@ -15,6 +15,7 @@ enum class ProxyType
     Shadowsocks,
     ShadowsocksR,
     VMess,
+    VLESS,
     Trojan,
     Snell,
     HTTP,
@@ -36,6 +37,8 @@ inline String getProxyTypeName(ProxyType type)
         return "SSR";
     case ProxyType::VMess:
         return "VMess";
+    case ProxyType::VLESS:
+        return "VLESS";
     case ProxyType::Trojan:
         return "Trojan";
     case ProxyType::Snell:
@@ -91,6 +94,9 @@ struct Proxy
     String QUICSecure;
     String QUICSecret;
 
+    String Flow;
+    String ShortId;
+
     tribool UDP;
     tribool TCPFastOpen;
     tribool AllowInsecure;
@@ -114,6 +120,7 @@ struct Proxy
     String ClientId;
 
     String Ports;
+    String BbrProfile;
     String Up;
     uint32_t UpSpeed;
     String Down;

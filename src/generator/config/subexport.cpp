@@ -133,6 +133,7 @@ bool applyMatcher(const std::string &rule, std::string &real_rule, const Proxy &
         {ProxyType::Shadowsocks,  "SS"},
         {ProxyType::ShadowsocksR, "SSR"},
         {ProxyType::VMess,        "VMESS"},
+        {ProxyType::VLESS,        "VLESS"},
         {ProxyType::Trojan,       "TROJAN"},
         {ProxyType::Snell,        "SNELL"},
         {ProxyType::HTTP,         "HTTP"},
@@ -382,6 +383,53 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
                 continue;
             }
             break;
+        case ProxyType::VLESS:
+            singleproxy["type"] = "vless";
+            singleproxy["uuid"] = x.UserId;
+            singleproxy["tls"] = x.TLSSecure;
+            if(!x.Flow.empty())
+                singleproxy["flow"] = x.Flow;
+            if(!scv.is_undef())
+                singleproxy["skip-cert-verify"] = scv.get();
+            if(!x.ServerName.empty())
+                singleproxy["servername"] = x.ServerName;
+            if(!x.Fingerprint.empty())
+                singleproxy["client-fingerprint"] = x.Fingerprint;
+
+            // Reality 配置
+            if(!x.PublicKey.empty())
+            {
+                singleproxy["reality-opts"]["public-key"] = x.PublicKey;
+                if(!x.ShortId.empty())
+                    singleproxy["reality-opts"]["short-id"] = x.ShortId;
+            }
+
+            switch(hash_(x.TransferProtocol))
+            {
+            case "tcp"_hash:
+                break;
+            case "ws"_hash:
+                singleproxy["network"] = x.TransferProtocol;
+                singleproxy["ws-opts"]["path"] = x.Path;
+                if(!x.Host.empty())
+                    singleproxy["ws-opts"]["headers"]["Host"] = x.Host;
+                break;
+            case "grpc"_hash:
+                singleproxy["network"] = x.TransferProtocol;
+                if(!x.Path.empty())
+                    singleproxy["grpc-opts"]["grpc-service-name"] = x.Path;
+                break;
+            case "http"_hash:
+            case "h2"_hash:
+                singleproxy["network"] = "h2";
+                singleproxy["h2-opts"]["path"] = x.Path;
+                if(!x.Host.empty())
+                    singleproxy["h2-opts"]["host"].push_back(x.Host);
+                break;
+            default:
+                continue;
+            }
+            break;
         case ProxyType::ShadowsocksR:
             //ignoring all nodes with unsupported obfs, protocols and encryption
             if(ext.filter_deprecated)
@@ -544,6 +592,8 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
             break;
         case ProxyType::Hysteria2:
             singleproxy["type"] = "hysteria2";
+            if (!x.BbrProfile.empty())
+                singleproxy["bbr-profile"] = x.BbrProfile;
             if (!x.Ports.empty())
                 singleproxy["ports"] = x.Ports;
             if (!x.Up.empty())
@@ -883,6 +933,8 @@ std::string proxyToSurge(std::vector<Proxy> &nodes, const std::string &base_conf
             if(!scv.is_undef())
                 proxy += ", skip-cert-verify=" + scv.get_str();
             break;
+        case ProxyType::VLESS:
+            continue; // VLESS only exported for Clash/Clash.Meta
         case ProxyType::ShadowsocksR:
             if(ext.surge_ssr_path.empty() || surge_ver < 2)
                 continue;
@@ -1160,6 +1212,8 @@ std::string proxyToSingle(std::vector<Proxy> &nodes, int types, extra_settings &
                 continue;
             proxyStr = "vmess://" + base64Encode(vmessLinkConstruct(remark, hostname, port, faketype, id, aid, transproto, path, host, tlssecure ? "tls" : ""));
             break;
+        case ProxyType::VLESS:
+            continue; // VLESS only exported for Clash/Clash.Meta
         case ProxyType::Trojan:
             if(!trojan)
                 continue;
@@ -2332,6 +2386,8 @@ static rapidjson::Value buildSingBoxHysteria2ServerPorts(const std::string &port
         const bool is_single_port = std::all_of(port_entry.begin(), port_entry.end(), [](unsigned char ch) { return std::isdigit(ch); });
         if (is_single_port)
             port_entry = port_entry + ":" + port_entry;
+        else
+            std::replace(port_entry.begin(), port_entry.end(), '-', ':');
 
         result.PushBack(rapidjson::Value(port_entry.c_str(), allocator), allocator);
     }
@@ -2407,6 +2463,8 @@ void proxyToSingBox(std::vector<Proxy> &nodes, rapidjson::Document &json, std::v
                     proxy.AddMember("transport", transport, allocator);
                 break;
             }
+            case ProxyType::VLESS:
+                continue; // VLESS only exported for Clash/Clash.Meta
             case ProxyType::Trojan:
             {
                 addSingBoxCommonMembers(proxy, x, "trojan", allocator);

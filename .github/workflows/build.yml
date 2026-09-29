@@ -1,7 +1,7 @@
 name: GitHub CI
 on: 
   push:
-    branches: [ master ]
+    branches: [ master, integration ]
     tags:
       - '**'
   workflow_dispatch:
@@ -52,11 +52,11 @@ jobs:
       run: SHA=$(git rev-parse --short HEAD) && sed -i 's/\(v[0-9]\.[0-9]\.[0-9]\)/\1-'"$SHA"'/' src/version.h
     - name: Build
       run: |
-        DOCKER_OPTS=""
+        docker_opts=()
         if [ "${{ matrix.qemu }}" = "true" ]; then
-          DOCKER_OPTS="--platform ${{ matrix.docker_platform }}"
+          docker_opts+=(--platform "${{ matrix.docker_platform }}")
         fi
-        docker run --rm $DOCKER_OPTS -v $GITHUB_WORKSPACE:/root/workdir alpine:${{ matrix.alpine_version }} /bin/sh -c "apk add bash git nodejs npm && cd /root/workdir && chmod +x scripts/build.alpine.release.sh && bash scripts/build.alpine.release.sh"
+        docker run --rm "${docker_opts[@]}" -v "$GITHUB_WORKSPACE:/root/workdir" alpine:${{ matrix.alpine_version }} /bin/sh -c "apk add bash git nodejs npm && cd /root/workdir && chmod +x scripts/build.alpine.release.sh && bash scripts/build.alpine.release.sh"
     - uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.artifact }}
@@ -164,3 +164,18 @@ jobs:
       with:
         files: ${{ matrix.artifact }}.7z
         draft: true
+
+  e2e:
+    name: Conversion E2E
+    needs: linux_build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/download-artifact@v8
+      with:
+        name: subconverter_linux64
+        path: subconverter/
+    - name: Run packaged backend conversions
+      run: |
+        chmod +x subconverter/subconverter
+        python3 tests/e2e.py
