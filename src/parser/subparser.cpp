@@ -1509,6 +1509,13 @@ void explodeClash(Node yamlnode, std::vector<Proxy> &nodes)
             tls = safe_as<std::string>(singleproxy["tls"]) == "true" ? "tls" : "";
 
             vmessConstruct(node, group, ps, server, port, "", id, aid, net, cipher, path, host, edge, tls, sni, udp, tfo, scv, tribool(), underlying_proxy);
+            singleproxy["packet-encoding"] >>= node.PacketEncoding;
+            singleproxy["client-fingerprint"] >>= node.ClientFingerprint;
+            node.GlobalPadding = safe_as<std::string>(singleproxy["global-padding"]);
+            node.AuthenticatedLength = safe_as<std::string>(singleproxy["authenticated-length"]);
+            if(singleproxy["alpn"].IsSequence())
+                for(const auto &entry : singleproxy["alpn"])
+                    node.Alpn.push_back(entry.as<std::string>());
             break;
         case "ss"_hash:
             group = SS_DEFAULT_GROUP;

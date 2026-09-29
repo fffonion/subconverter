@@ -98,6 +98,20 @@ int main() {
     assert(second["packet-encoding"].as<std::string>() == "xudp");
     assert(second["encryption"].as<std::string>() == "example-encryption");
     assert(second["alpn"].size() == 2);
+    YAML::Node vmess_input = YAML::Load(R"(proxies:
+  - {name: vmess-sample, type: vmess, server: vm.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, alterId: 0, cipher: auto, tls: true, packet-encoding: packetaddr, global-padding: true, authenticated-length: false, client-fingerprint: chrome, alpn: [h2, http/1.1]}
+)");
+    std::vector<Proxy> vmess_nodes;
+    explodeClash(vmess_input, vmess_nodes);
+    assert(vmess_nodes.size() == 1);
+    YAML::Node vmess_output;
+    proxyToClash(vmess_nodes, vmess_output, groups, false, settings);
+    const auto vmess_roundtrip = vmess_output["proxies"][0];
+    assert(vmess_roundtrip["packet-encoding"].as<std::string>() == "packetaddr");
+    assert(vmess_roundtrip["global-padding"].as<bool>());
+    assert(!vmess_roundtrip["authenticated-length"].as<bool>());
+    assert(vmess_roundtrip["client-fingerprint"].as<std::string>() == "chrome");
+    assert(vmess_roundtrip["alpn"].size() == 2);
     std::vector<Proxy> subscription_nodes;
     explodeSub("mixed-port: 7890\n" + YAML::Dump(sample), subscription_nodes);
     assert(subscription_nodes.size() == 1);

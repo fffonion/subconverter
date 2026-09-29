@@ -332,6 +332,16 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
             singleproxy["alterId"] = x.AlterId;
             singleproxy["cipher"] = x.EncryptMethod;
             singleproxy["tls"] = x.TLSSecure;
+            if(!x.PacketEncoding.empty())
+                singleproxy["packet-encoding"] = x.PacketEncoding;
+            if(!x.GlobalPadding.is_undef())
+                singleproxy["global-padding"] = x.GlobalPadding.get();
+            if(!x.AuthenticatedLength.is_undef())
+                singleproxy["authenticated-length"] = x.AuthenticatedLength.get();
+            if(!x.ClientFingerprint.empty())
+                singleproxy["client-fingerprint"] = x.ClientFingerprint;
+            if(!x.Alpn.empty())
+                singleproxy["alpn"] = x.Alpn;
             if(!scv.is_undef())
                 singleproxy["skip-cert-verify"] = scv.get();
             if(!x.ServerName.empty())

@@ -64,6 +64,15 @@ class ConversionE2E(unittest.TestCase):
         for expected in ("packet-encoding: xudp", "encryption: example-encryption", "alpn:"):
             self.assertIn(expected, output)
 
+    def test_vmess_mihomo_fields(self):
+        sample = ("proxies:\n"
+                  "  - {name: vmess-sample, type: vmess, server: vm.example.com, port: 443, uuid: 12345678-1234-1234-1234-123456789abc, alterId: 0, cipher: auto, tls: true, packet-encoding: packetaddr, global-padding: true, authenticated-length: false, client-fingerprint: chrome, alpn: [h2, http/1.1]}\n")
+        source = "data:text/plain;base64," + base64.b64encode(sample.encode()).decode()
+        output = self.convert("clash", source)
+        for expected in ("packet-encoding: packetaddr", "global-padding: true",
+                         "authenticated-length: false", "client-fingerprint: chrome", "h2"):
+            self.assertIn(expected, output)
+
     def test_hysteria2_port_range_fingerprint_and_bandwidth(self):
         source = ("hysteria2://password@192.0.2.10:8443-8450/"
                   "?sni=example.com&pinSHA256=abc&up=1%20Gbps&down=200%20Mbps#hy2")

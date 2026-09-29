@@ -98,6 +98,9 @@ struct Proxy
     String ShortId;
     String PacketEncoding;
     String VlessEncryption;
+    String ClientFingerprint;
+    tribool GlobalPadding;
+    tribool AuthenticatedLength;
 
     tribool UDP;
     tribool TCPFastOpen;
