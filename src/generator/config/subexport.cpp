@@ -400,8 +400,12 @@ void proxyToClash(std::vector<Proxy> &nodes, YAML::Node &yamlnode, const ProxyGr
             if(!x.PublicKey.empty())
             {
                 singleproxy["reality-opts"]["public-key"] = x.PublicKey;
-                if(!x.ShortId.empty())
-                    singleproxy["reality-opts"]["short-id"] = x.ShortId;
+                if(!x.ShortId.empty() && x.ShortId != "null")
+                {
+                    YAML::Node short_id(x.ShortId);
+                    short_id.SetTag("tag:yaml.org,2002:str");
+                    singleproxy["reality-opts"]["short-id"] = short_id;
+                }
             }
 
             switch(hash_(x.TransferProtocol))

@@ -52,7 +52,7 @@ class ConversionE2E(unittest.TestCase):
                          "servername: example.com", "client-fingerprint: chrome",
                          "public-key: abc", "ws.example.com"):
             self.assertIn(expected, output[:1500], expected)
-        self.assertRegex(output[:1500], r'short-id: ["\']?11["\']?')
+        self.assertRegex(output[:1500], r'short-id: (?:!<tag:yaml.org,2002:str> )?["\']?11["\']?')
 
     def test_hysteria2_port_range_fingerprint_and_bandwidth(self):
         source = ("hysteria2://password@192.0.2.10:8443-8450/"
